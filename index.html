@@ -209,6 +209,33 @@ textarea{resize:vertical;min-height:70px}
     font-size: 14px; padding: 4px 14px; border-radius: 14px;
   }
 }
+  
+/* ── SUMMARY ─────────────────────────────────────────────── */
+.sum-tabs{display:flex;border-bottom:2px solid #e0d8cc;margin-bottom:20px}
+.sum-tab{padding:10px 22px;cursor:pointer;font-family:sans-serif;font-size:14px;color:#999;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.sum-tab.active{color:#1a1a2e;border-bottom-color:#1a1a2e}
+.sum-cur-tabs{display:flex;gap:8px;margin-bottom:16px}
+.sum-cur-tab{padding:6px 18px;border-radius:20px;cursor:pointer;font-family:sans-serif;font-size:13px;font-weight:700;background:#f0ede6;color:#7a6a4a;border:2px solid transparent;transition:background .15s,color .15s}
+.sum-cur-tab.active{background:#1a1a2e;color:#e8d5a3}
+.sum-tbl{width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;margin-bottom:16px}
+.sum-tbl th{background:#1a1a2e;color:#e8d5a3;padding:9px 10px;text-align:left;font-weight:600;white-space:nowrap}
+.sum-tbl td{padding:8px 10px;border-bottom:1px solid #f0ede6;vertical-align:middle}
+.sum-tbl tr:nth-child(even) td{background:#fdfaf6}
+.sum-tbl tr:last-child td{border-bottom:none}
+.sum-neg{color:#c62828;font-weight:700}
+.sum-pos{color:#2e7d32;font-weight:700}
+.sum-recap{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.sum-rec{flex:1;min-width:100px;background:#f0ede6;border-radius:10px;padding:12px 14px;font-family:sans-serif}
+.sum-rec-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.sum-rec-val{font-size:16px;font-weight:700}
+.sum-empty{text-align:center;padding:36px;color:#bbb;font-family:sans-serif;font-size:14px;font-style:italic}
+.rpaid{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:700;font-family:sans-serif}
+.runpaid{display:inline-block;background:#ffebee;color:#c62828;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:700;font-family:sans-serif}
+@media(max-width:599px){
+  .sum-tbl{font-size:12px}.sum-tbl th,.sum-tbl td{padding:7px 8px}
+  .sum-rec-val{font-size:15px}
+}
+  
 </style>
 </head>
 <body>
@@ -320,7 +347,7 @@ function today(){ return new Date().toISOString().split('T')[0]; }
 function durWords(m){ var w=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve']; m=parseInt(m); if(m<=12&&w[m])return w[m]+' month'+(m>1?'s':''); var sp={18:'Eighteen months',24:'Twenty-four months',36:'Thirty-six months',48:'Forty-eight months',60:'Sixty months'}; return sp[m]||m+' months'; }
 function fmtAmt(amount,currency){ var n=parseFloat(amount); if(currency==='KHR')return n.toLocaleString('en-US',{maximumFractionDigits:0})+' ₹'; return '$'+n.toFixed(2); }
 
-function render(){ renderStepBar(); if(page==='home')renderHome(); else if(page==='contract')renderContract(); else if(page==='expense')renderExpense(); }
+function render(){ renderStepBar(); if(page==='home')renderHome(); else if(page==='contract')renderContract(); else if(page==='expense')renderExpense(); else if(page==='summary')renderSummary(); }
 function renderStepBar(){
   var steps=page==='contract'?C_STEPS:page==='expense'?E_STEPS:[];
   var step=page==='contract'?cStep:eStep;
@@ -332,9 +359,11 @@ function renderHome(){
   var h='<div class="card"><div class="home-title">Vila 294</div><div class="home-sub">Select a tool to get started</div><div class="home-grid">';
   h+='<div class="home-card" onclick="goTo(\'contract\')"><div class="home-card-icon">&#128196;</div><div><div class="home-card-title">Contract Generator</div><div class="home-card-desc">Create a formatted lease agreement and save it directly to Google Drive</div></div></div>';
   h+='<div class="home-card" onclick="goTo(\'expense\')"><div class="home-card-icon">&#128200;</div><div><div class="home-card-title">Revenue &amp; Expenses</div><div class="home-card-desc">Log payments, electricity bills, and expenses with automatic monthly tracking</div></div></div>';
+  h+='<div class="home-card" onclick="goTo(\'summary\')" style="grid-column:1/-1"><div class="home-card-icon">&#128202;</div><div><div class="home-card-title">Monthly Summary</div><div class="home-card-desc">View this month\'s revenues, expenses, balance, and rent payment status for all rooms</div></div></div>';
   h+='</div></div>';
   document.getElementById('app').innerHTML=h;
 }
+  
 function goTo(p){
   page=p; cStep=0; eStep=0;
   cf={room:'',cd:'',ad:'',dur:'12',rent:'',pd:'1',tenants:[nt()]};
@@ -488,6 +517,89 @@ function saveExpenseEntry(){
     function(e){ document.getElementById('ec').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">'+e.message+'</p>'; }
   );
 }
+// ── SUMMARY ───────────────────────────────────────────
+var sumData=null, sumTab='monthly', sumCur='USD';
+
+function renderSummary(){
+  sumData=null;
+  document.getElementById('app').innerHTML='<button class="back-home" onclick="goHome()">&#8592; Back to Home</button><div class="card" id="sc"><div class="spin-wrap"><div class="spinner"></div><br>Loading summary&hellip;</div></div>';
+  gas('getSummary',{},
+    function(r){ sumData=r; buildSummaryUI(); },
+    function(e){ document.getElementById('sc').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">'+e.message+'</p>'; }
+  );
+}
+
+function buildSummaryUI(){
+  if(!sumData)return;
+  var r=sumData;
+  var h='<div class="home-title" style="margin-bottom:4px">&#128202; Monthly Summary</div>';
+  h+='<div class="home-sub" style="margin-bottom:18px">'+r.sheetName+'</div>';
+  h+='<div class="sum-tabs">';
+  h+='<div class="sum-tab'+(sumTab==='monthly'?' active':'')+'" onclick="setSumTab(\'monthly\')">&#128200; Monthly</div>';
+  h+='<div class="sum-tab'+(sumTab==='rent'?' active':'')+'" onclick="setSumTab(\'rent\')">&#127968; Rent Status</div>';
+  h+='</div>';
+
+  if(!r.hasData){
+    h+='<div class="sum-empty">No revenues or expenses recorded yet for '+r.sheetName+'.</div>';
+    document.getElementById('sc').innerHTML=h; return;
+  }
+
+  if(sumTab==='monthly'){
+    h+='<div class="sum-cur-tabs">';
+    h+='<div class="sum-cur-tab'+(sumCur==='USD'?' active':'')+'" onclick="setSumCur(\'USD\')">$ USD</div>';
+    h+='<div class="sum-cur-tab'+(sumCur==='KHR'?' active':'')+'" onclick="setSumCur(\'KHR\')">&#x20B9; KHR</div>';
+    h+='</div>';
+    var rows=r.rows.filter(function(x){return x.currency===sumCur;});
+    if(rows.length===0){
+      h+='<div class="sum-empty">No '+sumCur+' entries for '+r.sheetName+'.</div>';
+    } else {
+      h+='<div style="overflow-x:auto"><table class="sum-tbl"><thead><tr><th>Date</th><th>Room</th><th>Category</th><th>Amount</th></tr></thead><tbody>';
+      rows.forEach(function(row){
+        var isExp=row.type==='D\u00e9pense';
+        var n=row.amount;
+        var amtStr=sumCur==='KHR'
+          ?(isExp?'\u2212':'')+n.toLocaleString('en-US',{maximumFractionDigits:0})+' KHR'
+          :(isExp?'\u2212$':'$')+n.toFixed(2);
+        h+='<tr><td>'+row.date+'</td><td><strong>'+row.room+'</strong></td><td>'+row.cat+'</td>';
+        h+='<td class="'+(isExp?'sum-neg':'sum-pos')+'">'+amtStr+'</td></tr>';
+      });
+      h+='</tbody></table></div>';
+      var rev=rows.filter(function(x){return x.type==='Revenu';}).reduce(function(a,x){return a+x.amount;},0);
+      var exp=rows.filter(function(x){return x.type==='D\u00e9pense';}).reduce(function(a,x){return a+x.amount;},0);
+      var bal=rev-exp;
+      var fmt=function(n){return sumCur==='KHR'?n.toLocaleString('en-US',{maximumFractionDigits:0})+' KHR':'$'+n.toFixed(2);};
+      h+='<div class="sum-recap">';
+      h+='<div class="sum-rec"><div class="sum-rec-lbl">Total Revenues</div><div class="sum-rec-val sum-pos">'+fmt(rev)+'</div></div>';
+      h+='<div class="sum-rec"><div class="sum-rec-lbl">Total Expenses</div><div class="sum-rec-val sum-neg">'+fmt(exp)+'</div></div>';
+      h+='<div class="sum-rec"><div class="sum-rec-lbl">Balance</div><div class="sum-rec-val" style="color:'+(bal>=0?'#2e7d32':'#c62828')+'">'+fmt(Math.abs(bal))+(bal<0?' &#9660;':'')+'</div></div>';
+      h+='</div>';
+    }
+  } else {
+    var allRooms=['101','102','103','201','202','203','301','302'];
+    var rentMap={};
+    r.rows.forEach(function(row){
+      if(row.cat==='Rent'&&row.type==='Revenu') rentMap[row.room]={amount:row.amount,currency:row.currency,date:row.date};
+    });
+    h+='<div style="overflow-x:auto"><table class="sum-tbl"><thead><tr><th>Room</th><th>Status</th><th>Amount</th><th>Date Paid</th></tr></thead><tbody>';
+    allRooms.forEach(function(room){
+      var info=rentMap[room];
+      if(info){
+        var amtStr=info.currency==='KHR'
+          ?info.amount.toLocaleString('en-US',{maximumFractionDigits:0})+' KHR'
+          :'$'+parseFloat(info.amount).toFixed(2);
+        h+='<tr><td><strong>'+room+'</strong></td><td><span class="rpaid">&#10003; Paid</span></td><td class="sum-pos">'+amtStr+'</td><td>'+info.date+'</td></tr>';
+      } else {
+        h+='<tr><td><strong>'+room+'</strong></td><td><span class="runpaid">&#10007; Unpaid</span></td><td style="color:#bbb">&mdash;</td><td style="color:#bbb">&mdash;</td></tr>';
+      }
+    });
+    h+='</tbody></table></div>';
+  }
+  document.getElementById('sc').innerHTML=h;
+}
+
+function setSumTab(t){ sumTab=t; buildSummaryUI(); }
+function setSumCur(c){ sumCur=c; buildSummaryUI(); }
+
 </script>
 </body>
 </html>
