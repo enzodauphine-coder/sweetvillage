@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vila 294</title>
+<meta name="apple-mobile-web-app-title" content="Vila 294">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;background:#f7f4ee;min-height:100vh}
+#pin-screen{position:fixed;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:24px}
+.pin-logo{margin-bottom:16px;border-radius:20px;display:block}
+.pin-app-name{color:#e8d5a3;font-size:30px;letter-spacing:3px;font-family:Georgia,serif;margin-bottom:6px}
+.pin-sub{color:rgba(232,213,163,0.5);font-size:13px;font-family:sans-serif;margin-bottom:44px;letter-spacing:1px}
+#pin-dots-container{display:flex;gap:18px;margin-bottom:48px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(232,213,163,0.6);background:transparent;transition:background 0.15s,border-color 0.15s}
+.pin-dot.filled{background:#e8d5a3;border-color:#e8d5a3}
+.pin-pad{display:grid;grid-template-columns:repeat(3,76px);gap:14px}
+.pin-btn{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#e8d5a3;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:sans-serif;transition:background 0.1s,transform 0.1s;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.pin-btn:active{background:rgba(232,213,163,0.22);transform:scale(0.93)}
+.pin-btn.empty{background:none;border:none;cursor:default}
+#pin-error{color:#ef9a9a;font-size:13px;font-family:sans-serif;margin-top:20px;height:20px;text-align:center}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+.shake{animation:shake 0.4s ease}
+#main-app{display:none}
+.header{background:#1a1a2e;color:#e8d5a3;padding:14px 24px;display:flex;align-items:center;gap:14px}
+.header h1{font-size:20px;letter-spacing:1px}
+.header p{font-size:12px;opacity:.7;font-family:sans-serif;margin-top:3px}
+.steps{background:#e8d5a3;padding:10px 28px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.snum{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;font-family:sans-serif;background:#c9b88a;color:#e8d5a3}
+.snum.active{background:#1a1a2e}.snum.done{background:#6b7f5e}
+.slbl{font-size:12px;font-family:sans-serif;color:#999}
+.slbl.active{color:#1a1a2e;font-weight:700}
+.sdiv{width:18px;height:2px;background:#c9b88a;margin:0 4px}
+.wrap{max-width:680px;margin:32px auto;padding:0 16px 40px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);padding:28px}
+.stitle{font-size:19px;color:#1a1a2e;margin-bottom:20px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.full{grid-column:1/-1}
+label{display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-family:sans-serif}
+input,select,textarea{border:1px solid #ccc;border-radius:8px;padding:8px 12px;font-size:16px;width:100%;font-family:sans-serif;background:#fff}
+textarea{resize:vertical;min-height:70px}
+.ibox{margin-top:14px;padding:12px 14px;background:#f0ede6;border-radius:8px;font-size:13px;color:#5a4e3c;font-family:sans-serif}
+.tbox{border:1px solid #e0d8cc;border-radius:10px;padding:18px;margin-bottom:14px;background:#fdfaf6}
+.th{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ttl{font-size:14px;font-weight:bold;color:#1a1a2e}
+.rmb{background:none;border:none;color:#cc4444;cursor:pointer;font-size:13px;font-family:sans-serif}
+.addb{background:none;border:2px dashed #c9b88a;border-radius:8px;padding:10px;color:#7a6a4a;cursor:pointer;font-size:13px;width:100%;font-family:sans-serif}
+.srow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee;font-family:sans-serif;font-size:13px}
+.srow span:first-child{color:#888}.srow span:last-child{font-weight:600;color:#1a1a2e}
+.genb{margin-top:22px;width:100%;background:#1a1a2e;color:#e8d5a3;border:none;border-radius:10px;padding:14px;font-size:16px;cursor:pointer;font-family:Georgia,serif;letter-spacing:1px}
+.nav{display:flex;justify-content:space-between;margin-top:18px}
+.backb{background:#fff;border:2px solid #c9b88a;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer;color:#7a6a4a;font-family:sans-serif}
+.backb:disabled{background:#eee;color:#bbb;cursor:default;border-color:#ddd}
+.nextb{background:#1a1a2e;border:none;border-radius:8px;padding:10px 26px;font-size:14px;cursor:pointer;color:#e8d5a3;font-family:sans-serif}
+.nextb:disabled{background:#ccc;cursor:default}
+.rbox{background:#f0ede6;border-radius:12px;padding:28px;text-align:center}
+.rico{font-size:52px;margin-bottom:14px}
+.rtitle{font-size:20px;color:#1a1a2e;margin-bottom:8px}
+.rsub{font-size:13px;color:#666;font-family:sans-serif;margin-bottom:22px}
+.openb{display:inline-block;background:#1a1a2e;color:#e8d5a3;text-decoration:none;border-radius:10px;padding:13px 30px;font-size:15px;font-family:Georgia,serif;letter-spacing:1px}
+.newb{display:inline-block;background:#e8d5a3;color:#1a1a2e;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-family:sans-serif;cursor:pointer;margin-top:12px}
+.spin-wrap{text-align:center;padding:40px;font-family:sans-serif;color:#888;font-size:14px}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid #e0d8cc;border-top-color:#1a1a2e;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+.home-card{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.08);padding:28px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;border:2px solid transparent}
+.home-card:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(0,0,0,.13);border-color:#c9b88a}
+.home-card-icon{font-size:44px;margin-bottom:14px}
+.home-card-title{font-size:17px;color:#1a1a2e;font-weight:bold;margin-bottom:8px}
+.home-card-desc{font-size:13px;color:#888;font-family:sans-serif;line-height:1.5}
+.home-title{font-size:22px;color:#1a1a2e;margin-bottom:6px}
+.home-sub{font-size:13px;color:#999;font-family:sans-serif;margin-bottom:24px}
+.back-home{background:none;border:none;color:#c9b88a;cursor:pointer;font-size:13px;font-family:sans-serif;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px}
+.back-home:hover{color:#1a1a2e}
+.upload-area{border:2px dashed #c9b88a;border-radius:8px;padding:16px;text-align:center;cursor:pointer;font-family:sans-serif;font-size:13px;color:#7a6a4a;background:#fdfaf6;transition:background .2s}
+.upload-area:hover{background:#f5ede0}
+.upload-area input{display:none}
+.upload-preview{margin-top:10px;font-size:12px;color:#555;font-family:sans-serif}
+.badge-revenu{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;font-family:sans-serif}
+.badge-depense{display:inline-block;background:#ffebee;color:#c62828;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;font-family:sans-serif}
+.badge-usd{display:inline-block;background:#e8f5e9;color:#1b5e20;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;font-family:sans-serif}
+.badge-khr{display:inline-block;background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;font-family:sans-serif}
+
+/* ── MOBILE ─────────────────────────────────────────── */
+@media (max-width: 599px) {
+
+  /* ── Pin screen ── */
+  .pin-app-name { font-size: 28px; letter-spacing: 4px; }
+  .pin-sub { font-size: 14px; margin-bottom: 36px; }
+  #pin-dots-container { margin-bottom: 40px; gap: 22px; }
+  .pin-dot { width: 18px; height: 18px; border-width: 2.5px; }
+  .pin-pad { grid-template-columns: repeat(3, 96px); gap: 14px; }
+  .pin-btn { width: 96px; height: 96px; font-size: 30px; }
+  #pin-error { font-size: 14px; }
+
+  /* ── Header ── */
+  .header { padding: 14px 18px; gap: 12px; }
+  .header h1 { font-size: 19px; }
+  .header p { font-size: 12px; }
+
+  /* ── Step bar — scrollable, no wrap ── */
+  .steps {
+    padding: 12px 18px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .steps::-webkit-scrollbar { display: none; }
+  .snum { width: 30px; height: 30px; font-size: 13px; }
+  .slbl { font-size: 13px; white-space: nowrap; }
+  .sdiv { width: 14px; }
+
+  /* ── Layout ── */
+  .wrap { margin: 0; padding: 16px 14px 80px; }
+  .card { padding: 24px 18px; border-radius: 16px; box-shadow: 0 2px 20px rgba(0,0,0,.1); }
+
+  /* ── Home screen ── */
+  .home-title { font-size: 24px; margin-bottom: 6px; }
+  .home-sub { font-size: 15px; margin-bottom: 22px; }
+  .home-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 4px; }
+  .home-card {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    padding: 22px 20px;
+    gap: 20px;
+    border-radius: 16px;
+    border: 2px solid #f0ede6;
+  }
+  .home-card-icon { font-size: 48px; margin-bottom: 0; flex-shrink: 0; }
+  .home-card-title { font-size: 18px; margin-bottom: 6px; }
+  .home-card-desc { font-size: 14px; line-height: 1.5; }
+
+  /* ── Form fields ── */
+  .stitle { font-size: 20px; margin-bottom: 20px; }
+  .g2 { grid-template-columns: 1fr; gap: 18px; }
+  .full { grid-column: 1; }
+
+  label {
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    margin-bottom: 7px;
+  }
+
+  /* font-size ≥ 16px prevents iOS zoom on focus */
+  input, select, textarea {
+    font-size: 16px !important;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #ccc;
+  }
+  textarea { min-height: 90px; }
+
+  /* ── Tenant boxes ── */
+  .tbox { padding: 18px 14px; border-radius: 12px; }
+  .ttl { font-size: 16px; }
+  .rmb { font-size: 14px; }
+  .addb { padding: 15px; font-size: 15px; border-radius: 10px; }
+
+  /* ── Review rows ── */
+  .srow { flex-direction: column; gap: 3px; padding: 13px 0; }
+  .srow span:first-child { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: #aaa; }
+  .srow span:last-child { font-size: 16px; }
+
+  /* ── Info box ── */
+  .ibox { font-size: 14px; padding: 14px 16px; border-radius: 10px; line-height: 1.7; }
+
+  /* ── Nav buttons — full width, stacked ── */
+  .nav { flex-direction: column-reverse; gap: 12px; margin-top: 20px; }
+  .backb {
+    width: 100%; padding: 15px; font-size: 16px;
+    text-align: center; border-radius: 12px; border-width: 2px;
+  }
+  .nextb {
+    width: 100%; padding: 16px; font-size: 16px;
+    text-align: center; border-radius: 12px;
+  }
+
+  /* ── Generate / Save button ── */
+  .genb { padding: 17px; font-size: 17px; border-radius: 12px; margin-top: 24px; }
+
+  /* ── Upload area ── */
+  .upload-area { padding: 22px 14px; border-radius: 10px; font-size: 14px; }
+
+  /* ── Result / success screen ── */
+  .rbox { padding: 28px 18px; border-radius: 16px; }
+  .rico { font-size: 56px; margin-bottom: 16px; }
+  .rtitle { font-size: 22px; margin-bottom: 10px; }
+  .rsub { font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+  .openb {
+    display: block; padding: 16px; font-size: 16px;
+    text-align: center; border-radius: 12px;
+  }
+  .newb {
+    display: block; width: 100%; text-align: center;
+    padding: 14px; font-size: 15px; border-radius: 10px;
+  }
+
+  /* ── Back to home link ── */
+  .back-home { font-size: 15px; margin-bottom: 16px; padding: 6px 0; gap: 6px; }
+
+  /* ── Badges bigger ── */
+  .badge-revenu, .badge-depense, .badge-usd, .badge-khr {
+    font-size: 14px; padding: 4px 14px; border-radius: 14px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="pin-screen">
+  <div class="pin-app-name">VILA 294</div>
+  <div class="pin-sub">Enter access code</div>
+  <div id="pin-dots-container">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn empty"></button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn" onclick="pinDelete()" style="font-size:20px">&#9003;</button>
+  </div>
+  <div id="pin-error"></div>
+</div>
+
+<div id="main-app">
+  <div class="header">
+    <div><h1>Vila 294</h1><p>Building Management — Phnom Penh</p></div>
+  </div>
+  <div class="steps" id="sb"></div>
+  <div class="wrap"><div id="app"></div></div>
+</div>
+
+<script>
+// ── PASTE YOUR APPS SCRIPT /exec URL HERE ─────────────
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjl8u2-j4G9VRn7zzrnT05u0j2elWGy-1hCqaqtdUY9S0UUyNg_XOMb5mAhKK5bM08/exec';
+
+// ── API HELPER ────────────────────────────────────────
+function gas(action, payload, onOk, onErr) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(Object.assign({ action: action }, payload))
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if(d.ok) onOk(d.result); else onErr(new Error(d.error||'Error')); })
+  .catch(onErr);
+}
+
+// ── PIN ───────────────────────────────────────────────
+var pinVal='', pinBusy=false;
+function pinPress(n){
+  if(pinVal.length>=4||pinBusy)return;
+  pinVal+=n; updateDots();
+  if(pinVal.length===4){ pinBusy=true; setTimeout(verifyPin,120); }
+}
+function pinDelete(){ if(pinBusy)return; pinVal=pinVal.slice(0,-1); updateDots(); }
+function updateDots(){
+  for(var i=0;i<4;i++){ var d=document.getElementById('d'+i); if(d)d.classList.toggle('filled',i<pinVal.length); }
+}
+function verifyPin(){
+  gas('checkPin', {pin: pinVal},
+    function(ok){
+      pinBusy=false;
+      if(ok){
+        var ps=document.getElementById('pin-screen');
+        ps.style.transition='opacity 0.35s'; ps.style.opacity='0';
+        setTimeout(function(){ ps.style.display='none'; document.getElementById('main-app').style.display='block'; render(); }, 350);
+      } else {
+        document.getElementById('pin-error').textContent='Incorrect code — try again';
+        var dc=document.getElementById('pin-dots-container');
+        dc.classList.add('shake');
+        setTimeout(function(){ dc.classList.remove('shake'); pinVal=''; updateDots(); document.getElementById('pin-error').textContent=''; }, 500);
+      }
+    },
+    function(){
+      pinBusy=false;
+      document.getElementById('pin-error').textContent='Connection error — try again';
+      pinVal=''; updateDots();
+    }
+  );
+}
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('pin-screen').style.display==='none')return;
+  if(e.key>='0'&&e.key<='9') pinPress(e.key);
+  else if(e.key==='Backspace') pinDelete();
+});
+
+// ── APP STATE ─────────────────────────────────────────
+var page='home', cStep=0, eStep=0;
+var MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var ROOMS=['101','102','103','201','202','203','301','302'];
+var C_STEPS=['Room & Lease','Tenants','Financial','Review'];
+var E_STEPS=['Details','Review'];
+var cf={room:'',cd:'',ad:'',dur:'12',rent:'',pd:'1',tenants:[nt()]};
+var ef={date:'',type:'Dépense',room:'101',desc:'',cat:'Rent',currency:'USD',amount:'',receiptBase64:'',receiptMime:'',receiptExt:'',receiptName:''};
+
+function nt(){ return {name:'',dob:'',nat:'',dt:'Passport',dn:'',de:''}; }
+function ord(n){ var s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function fd(ds){ if(!ds)return''; var d=new Date(ds+'T00:00:00'); return ord(d.getDate())+' '+MO[d.getMonth()]+' '+d.getFullYear(); }
+function fds(ds){ if(!ds)return''; var d=new Date(ds+'T00:00:00'); return d.getDate()+' '+MOS[d.getMonth()]+' '+d.getFullYear(); }
+function am(ds,m){ if(!ds)return''; var d=new Date(ds+'T00:00:00'); d.setMonth(d.getMonth()+parseInt(m)); return d.toISOString().split('T')[0]; }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function durWords(m){ var w=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve']; m=parseInt(m); if(m<=12&&w[m])return w[m]+' month'+(m>1?'s':''); var sp={18:'Eighteen months',24:'Twenty-four months',36:'Thirty-six months',48:'Forty-eight months',60:'Sixty months'}; return sp[m]||m+' months'; }
+function fmtAmt(amount,currency){ var n=parseFloat(amount); if(currency==='KHR')return n.toLocaleString('en-US',{maximumFractionDigits:0})+' ₹'; return '$'+n.toFixed(2); }
+
+function render(){ renderStepBar(); if(page==='home')renderHome(); else if(page==='contract')renderContract(); else if(page==='expense')renderExpense(); }
+function renderStepBar(){
+  var steps=page==='contract'?C_STEPS:page==='expense'?E_STEPS:[];
+  var step=page==='contract'?cStep:eStep;
+  var h='';
+  if(steps.length>0){ steps.forEach(function(s,i){ var c=i===step?'active':i<step?'done':''; h+='<div style="display:flex;align-items:center;gap:6px"><div class="snum '+c+'">'+(i<step?'&#10003;':i+1)+'</div><span class="slbl '+c+'">'+s+'</span></div>'; if(i<steps.length-1)h+='<div class="sdiv"></div>'; }); }
+  document.getElementById('sb').innerHTML=h;
+}
+function renderHome(){
+  var h='<div class="card"><div class="home-title">Vila 294</div><div class="home-sub">Select a tool to get started</div><div class="home-grid">';
+  h+='<div class="home-card" onclick="goTo(\'contract\')"><div class="home-card-icon">&#128196;</div><div><div class="home-card-title">Contract Generator</div><div class="home-card-desc">Create a formatted lease agreement and save it directly to Google Drive</div></div></div>';
+  h+='<div class="home-card" onclick="goTo(\'expense\')"><div class="home-card-icon">&#128200;</div><div><div class="home-card-title">Revenue &amp; Expenses</div><div class="home-card-desc">Log payments, electricity bills, and expenses with automatic monthly tracking</div></div></div>';
+  h+='</div></div>';
+  document.getElementById('app').innerHTML=h;
+}
+function goTo(p){
+  page=p; cStep=0; eStep=0;
+  cf={room:'',cd:'',ad:'',dur:'12',rent:'',pd:'1',tenants:[nt()]};
+  ef={date:today(),type:'Dépense',room:'101',desc:'',cat:'Rent',currency:'USD',amount:'',receiptBase64:'',receiptMime:'',receiptExt:'',receiptName:''};
+  render();
+}
+function goHome(){ page='home'; render(); }
+
+// ── CONTRACT ──────────────────────────────────────────
+function renderContract(){
+  document.getElementById('app').innerHTML='<button class="back-home" onclick="goHome()">&#8592; Back to Home</button><div class="card" id="cc"></div><div class="nav" id="nb"></div>';
+  renderContractStep();
+}
+function renderContractStep(){
+  var h='';
+  if(cStep===0){
+    h='<div class="stitle">Room &amp; Lease Details</div><div class="g2">';
+    h+='<div><label>Room *</label><select onchange="uc(\'room\',this.value)"><option value="">Select&hellip;</option>';
+    ROOMS.forEach(function(r){ h+='<option'+(cf.room===r?' selected':'')+' value="'+r+'">Room '+r+'</option>'; });
+    h+='</select></div>';
+    h+='<div><label>Signing Date *</label><input type="date" value="'+cf.cd+'" onchange="uc(\'cd\',this.value)"></div>';
+    h+='<div><label>Arrival / Start *</label><input type="date" value="'+cf.ad+'" onchange="uc(\'ad\',this.value)"></div>';
+    h+='<div><label>Duration *</label><select onchange="uc(\'dur\',this.value)">';
+    for(var m=1;m<=60;m++) h+='<option value="'+m+'"'+(cf.dur==m?' selected':'')+'>'+m+' month'+(m>1?'s':'')+'</option>';
+    h+='</select></div></div>';
+    if(cf.ad&&cf.dur) h+='<div class="ibox">&#128197; Lease end: <strong>'+fd(am(cf.ad,cf.dur))+'</strong></div>';
+  } else if(cStep===1){
+    h='<div class="stitle">Tenant Information</div><p style="font-size:13px;color:#888;margin-bottom:18px;font-family:sans-serif">Room '+cf.room+'</p>';
+    cf.tenants.forEach(function(t,i){
+      h+='<div class="tbox"><div class="th"><span class="ttl">Tenant '+(i+1)+'</span>'+(i>0?'<button class="rmb" onclick="rmTenant('+i+')">&#10005; Remove</button>':'')+'</div><div class="g2">';
+      h+='<div class="full"><label>Full Name *</label><input type="text" placeholder="e.g. Kielty Damien John" value="'+t.name+'" onchange="uct('+i+',\'name\',this.value)"></div>';
+      h+='<div><label>Date of Birth</label><input type="date" value="'+t.dob+'" onchange="uct('+i+',\'dob\',this.value)"></div>';
+      h+='<div><label>Nationality *</label><input type="text" placeholder="e.g. Irish" value="'+t.nat+'" onchange="uct('+i+',\'nat\',this.value)"></div>';
+      h+='<div><label>Document Type</label><select onchange="uct('+i+',\'dt\',this.value)"><option'+(t.dt==='Passport'?' selected':'')+'>Passport</option><option'+(t.dt==='National ID'?' selected':'')+'>National ID</option><option'+(t.dt==='Residence Card'?' selected':'')+'>Residence Card</option></select></div>';
+      h+='<div><label>Document Number *</label><input type="text" placeholder="e.g. LT2021906" value="'+t.dn+'" onchange="uct('+i+',\'dn\',this.value)"></div>';
+      h+='<div><label>Doc Expiry</label><input type="date" value="'+t.de+'" onchange="uct('+i+',\'de\',this.value)"></div>';
+      h+='</div></div>';
+    });
+    h+='<button class="addb" onclick="addTenant()">+ Add another tenant</button>';
+  } else if(cStep===2){
+    h='<div class="stitle">Financial Terms</div><div class="g2">';
+    h+='<div><label>Monthly Rent (USD) *</label><div style="display:flex;align-items:center;gap:8px"><span style="font-family:sans-serif;font-size:14px;font-weight:bold;color:#555">USD</span><input type="number" min="1" step="1" placeholder="e.g. 800" value="'+cf.rent+'" onchange="uc(\'rent\',this.value)" style="flex:1"></div></div>';
+    h+='<div><label>Payment Due Day *</label><select onchange="uc(\'pd\',this.value)">';
+    [1,5,10,15,20,25,28,30,31].forEach(function(d){ h+='<option value="'+d+'"'+(cf.pd==d?' selected':'')+'>'+ord(d)+' of each month</option>'; });
+    h+='</select></div></div>';
+    if(cf.rent&&parseInt(cf.rent)>0) h+='<div class="ibox"><strong>&#128176; Summary</strong><br><br>Monthly rent: <strong>USD '+cf.rent+'</strong><br>Deposit: <strong>USD '+cf.rent+'</strong><br>Payment due: <strong>'+ord(parseInt(cf.pd))+' of each month</strong><br>Electricity: <strong>0.25 USD/kWh</strong></div>';
+  } else {
+    var rows=[['Room','Room '+cf.room],['Signing Date',fd(cf.cd)],['Arrival',fd(cf.ad)],['End Date',fd(am(cf.ad,cf.dur))],['Duration',cf.dur+' month'+(cf.dur>1?'s':'')],['Rent','USD '+cf.rent],['Payment Day',ord(parseInt(cf.pd))],['Tenants',cf.tenants.map(function(t){return t.name;}).join(', ')]];
+    h='<div class="stitle">Review &amp; Generate</div>';
+    rows.forEach(function(r){ h+='<div class="srow"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'; });
+    h+='<button class="genb" onclick="genContract()">Create Contract in Google Drive &#10022;</button>';
+  }
+  document.getElementById('cc').innerHTML=h;
+  var nb='<button class="backb" onclick="cBack()"'+(cStep===0?' disabled':'')+'>&#8592; Back</button>';
+  if(cStep<3) nb+='<button class="nextb" onclick="cNext()"'+(cCanNext()?'':' disabled')+'>Continue &#8594;</button>';
+  document.getElementById('nb').innerHTML=nb;
+}
+function cCanNext(){ if(cStep===0)return cf.room&&cf.cd&&cf.ad&&cf.dur; if(cStep===1)return cf.tenants.every(function(t){return t.name&&t.nat&&t.dn;}); if(cStep===2)return cf.rent&&parseInt(cf.rent)>0; return true; }
+function uc(k,v){ cf[k]=v; renderContractStep(); }
+function uct(i,k,v){ cf.tenants[i][k]=v; renderContractStep(); }
+function addTenant(){ cf.tenants.push(nt()); renderContractStep(); }
+function rmTenant(i){ cf.tenants.splice(i,1); renderContractStep(); }
+function cBack(){ if(cStep>0){ cStep--; renderStepBar(); renderContractStep(); } }
+function cNext(){ if(cCanNext()&&cStep<3){ cStep++; renderStepBar(); renderContractStep(); } }
+function genContract(){
+  document.getElementById('cc').innerHTML='<div class="spin-wrap"><div class="spinner"></div><br>Creating contract in Google Drive&hellip;</div>';
+  document.getElementById('nb').innerHTML='';
+  var td=cf.tenants.map(function(t,i){ var dob=t.dob?fd(t.dob):'—'; var exp=t.de?fd(t.de):'—'; return(i>0?'and ':'')+t.name+' (DoB: '+dob+'), Nationality: '+t.nat+', Holding '+t.dt+': No. '+t.dn+' (Exp: '+exp+')'; }).join(' ');
+  var tn=cf.tenants.map(function(t){return t.name;}).join(' & ');
+  var ts=cf.tenants.map(function(t){return t.name;}).join('     ');
+  gas('createContract',
+    { data: {room:cf.room,tenantDetails:td,tenantNames:tn,tenantSignatureLines:ts,startDate:fd(cf.ad),endDate:fd(am(cf.ad,cf.dur)),signingDate:fd(cf.cd),durationWords:durWords(cf.dur),rent:cf.rent,rentWords:'USD '+cf.rent,payDay:ord(parseInt(cf.pd))} },
+    function(r){
+      if(r.success){ document.getElementById('cc').innerHTML='<div class="rbox"><div class="rico">&#9989;</div><div class="rtitle">Contract Created!</div><div class="rsub">Room '+cf.room+' &mdash; '+tn+'<br>Saved in your &#128193; Contracts folder.</div><a class="openb" href="'+r.url+'" target="_blank">Open Contract &#8599;</a><br><button class="newb" onclick="goHome()">&#8592; Back to Home</button></div>'; }
+      else{ document.getElementById('cc').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">Error: '+r.error+'</p>'; document.getElementById('nb').innerHTML='<button class="backb" onclick="cBack()">&#8592; Back</button>'; }
+    },
+    function(e){ document.getElementById('cc').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">'+e.message+'</p>'; }
+  );
+}
+
+// ── EXPENSE ───────────────────────────────────────────
+function renderExpense(){
+  document.getElementById('app').innerHTML='<button class="back-home" onclick="goHome()">&#8592; Back to Home</button><div class="card" id="ec"></div><div class="nav" id="en"></div>';
+  renderExpenseStep();
+}
+function renderExpenseStep(){
+  var h='';
+  if(eStep===0){
+    h='<div class="stitle">Revenue &amp; Expense Entry</div><div class="g2">';
+    h+='<div><label>Date *</label><input type="date" value="'+ef.date+'" onchange="ue(\'date\',this.value)"></div>';
+    h+='<div><label>Type *</label><select onchange="ue(\'type\',this.value)">';
+    ['Dépense','Revenu'].forEach(function(t){ h+='<option'+(ef.type===t?' selected':'')+'>'+t+'</option>'; });
+    h+='</select></div>';
+    h+='<div><label>Room / Scope *</label><select onchange="ue(\'room\',this.value)">';
+    ROOMS.forEach(function(r){ h+='<option'+(ef.room===r?' selected':'')+' value="'+r+'">Room '+r+'</option>'; });
+    h+='<option'+(ef.room==='General'?' selected':'')+' value="General">General (all building)</option>';
+    h+='</select></div>';
+    h+='<div><label>Category *</label><select onchange="ue(\'cat\',this.value)">';
+    ['Rent','Electricity','Water','Others'].forEach(function(c){ h+='<option'+(ef.cat===c?' selected':'')+'>'+c+'</option>'; });
+    h+='</select></div>';
+    h+='<div><label>Currency *</label><select onchange="ue(\'currency\',this.value)">';
+    ['USD','KHR'].forEach(function(c){ h+='<option'+(ef.currency===c?' selected':'')+'>'+c+'</option>'; });
+    h+='</select></div>';
+    var isKhr=ef.currency==='KHR';
+    h+='<div><label>Amount *</label><div style="display:flex;align-items:center;gap:8px"><span style="font-family:sans-serif;font-size:14px;font-weight:bold;color:#555">'+(isKhr?'&#x20B9;':'$')+'</span>';
+    h+='<input type="number" min="0" step="'+(isKhr?'100':'0.01')+'" placeholder="'+(isKhr?'e.g. 400000':'e.g. 800.00')+'" value="'+ef.amount+'" onchange="ue(\'amount\',this.value)" style="flex:1"></div></div>';
+    h+='<div class="full"><label>Description *</label><textarea placeholder="e.g. July rent payment for Room 101" onchange="ue(\'desc\',this.value)">'+ef.desc+'</textarea></div>';
+    h+='<div class="full"><label>Receipt (optional)</label>';
+    h+='<div class="upload-area" onclick="document.getElementById(\'rf\').click()">';
+    if(ef.receiptName){ h+='<div>&#128248; <strong>'+ef.receiptName+'</strong></div><div class="upload-preview">Click to change</div>'; }
+    else{ h+='<div style="font-size:24px">&#128247;</div><div style="margin-top:6px">Click to upload a photo or PDF</div><div class="upload-preview">JPG, PNG, PDF accepted</div>'; }
+    h+='<input type="file" id="rf" accept="image/*,.pdf" onchange="handleReceipt(this)"></div></div>';
+    h+='</div>';
+  } else {
+    var typeBadge=ef.type==='Revenu'?'<span class="badge-revenu">Revenu</span>':'<span class="badge-depense">D&eacute;pense</span>';
+    var currBadge=ef.currency==='KHR'?'<span class="badge-khr">KHR</span>':'<span class="badge-usd">USD</span>';
+    var rows=[['Date',fds(ef.date)],['Type',ef.type],['Room',ef.room],['Category',ef.cat],['Currency',ef.currency],['Amount',fmtAmt(ef.amount,ef.currency)],['Description',ef.desc],['Receipt',ef.receiptName||'None']];
+    h='<div class="stitle">Review &amp; Save</div>';
+    rows.forEach(function(r){ var val=r[1]; if(r[0]==='Type')val=typeBadge; if(r[0]==='Currency')val=currBadge; h+='<div class="srow"><span>'+r[0]+'</span><span>'+val+'</span></div>'; });
+    h+='<button class="genb" onclick="saveExpenseEntry()">Save to Payment Tracker &#10022;</button>';
+  }
+  document.getElementById('ec').innerHTML=h;
+  var en='<button class="backb" onclick="eBack()"'+(eStep===0?' disabled':'')+'>&#8592; Back</button>';
+  if(eStep<1) en+='<button class="nextb" onclick="eNext()"'+(eCanNext()?'':' disabled')+'>Review &#8594;</button>';
+  document.getElementById('en').innerHTML=en;
+}
+function eCanNext(){ return ef.date&&ef.type&&ef.room&&ef.cat&&ef.currency&&ef.amount&&parseFloat(ef.amount)>0&&ef.desc; }
+function ue(k,v){ ef[k]=v; renderExpenseStep(); }
+function eBack(){ if(eStep>0){ eStep--; renderStepBar(); renderExpenseStep(); } }
+function eNext(){ if(eCanNext()&&eStep<1){ eStep++; renderStepBar(); renderExpenseStep(); } }
+function handleReceipt(input){
+  var file=input.files[0]; if(!file)return;
+  ef.receiptMime=file.type; ef.receiptExt=file.name.split('.').pop().toLowerCase(); ef.receiptName=file.name;
+  var reader=new FileReader();
+  reader.onload=function(e){ ef.receiptBase64=e.target.result.split(',')[1]; renderExpenseStep(); };
+  reader.readAsDataURL(file);
+}
+function saveExpenseEntry(){
+  document.getElementById('ec').innerHTML='<div class="spin-wrap"><div class="spinner"></div><br>Saving to Payment Tracker&hellip;</div>';
+  document.getElementById('en').innerHTML='';
+  gas('saveExpense',
+    { data: {date:ef.date,type:ef.type,room:ef.room,desc:ef.desc,cat:ef.cat,currency:ef.currency,amount:ef.amount,receiptBase64:ef.receiptBase64,receiptMime:ef.receiptMime,receiptExt:ef.receiptExt} },
+    function(r){
+      if(r.success){
+        document.getElementById('ec').innerHTML='<div class="rbox"><div class="rico">&#9989;</div><div class="rtitle">Entry Saved!</div><div class="rsub">'+ef.type+' of <strong>'+fmtAmt(ef.amount,ef.currency)+'</strong><br>Logged in <strong>'+r.sheetName+'</strong>'+(ef.receiptName?'<br>&#128247; Receipt saved':'')+'</div><a class="openb" href="'+r.url+'" target="_blank">Open Tracker &#8599;</a><br><button class="newb" onclick="goHome()">&#8592; Back to Home</button><br><button class="newb" onclick="goTo(\'expense\')" style="margin-top:6px">+ Add Another</button></div>';
+      } else {
+        document.getElementById('ec').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">Error: '+r.error+'</p>';
+        document.getElementById('en').innerHTML='<button class="backb" onclick="eBack()">&#8592; Back</button>';
+      }
+    },
+    function(e){ document.getElementById('ec').innerHTML='<p style="color:red;font-family:sans-serif;padding:20px">'+e.message+'</p>'; }
+  );
+}
+</script>
+</body>
+</html>
